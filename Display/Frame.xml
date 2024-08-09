@@ -110,7 +110,7 @@
 					</MaskedTextures>
 				</MaskTexture>
 			</Layer>
-		</Layers>									
+		</Layers>
 		<Animations>
 			<AnimationGroup parentKey="InAnim" setToFinalAlpha="true">
 				<Scale childKey="Icon" startDelay="0" duration="0.35" order="1" fromScaleX="1.15" fromScaleY="1.15" toScaleX="1" toScaleY="1">
@@ -183,7 +183,7 @@
 				<Texture parentKey="Icon" name="$parentGossipIcon">
 					<Size x="20" y="20"/>
 					<Anchors>
-						<Anchor point="LEFT" x="16" y="0"/> 
+						<Anchor point="LEFT" x="16" y="0"/>
 					</Anchors>
 				</Texture>
 			</Layer>
@@ -307,7 +307,7 @@
 						<Size x="1" y="1"/>
 						<Anchors>
 							<Anchor point="TOP"/>
-						</Anchors>						
+						</Anchors>
 						<Layers>
 							<Layer level="ARTWORK">
 								<FontString parentKey="Text" inherits="Fancy22Font" justifyH="LEFT" hidden="true">
@@ -323,7 +323,7 @@
 						<Size x="1" y="1"/>
 						<Anchors>
 							<Anchor point="TOP" relativeKey="$parent.Choices" relativePoint="BOTTOM" x="0" y="-8"/>
-						</Anchors>						
+						</Anchors>
 						<Layers>
 							<Layer level="ARTWORK">
 								<FontString parentKey="Text" inherits="Fancy22Font" justifyH="LEFT" hidden="true">
@@ -633,7 +633,7 @@
 									<Layer level="BACKGROUND">
 										<FontString parentKey="ObjectivesHeader" inherits="QuestTitleFont" text="QUEST_OBJECTIVES"  justifyH="LEFT" hidden="true">
 											<Size x="285" y="0"/>
-										</FontString>				
+										</FontString>
 										<FontString parentKey="ObjectivesText" inherits="SystemFont_Shadow_Med2" justifyH="LEFT" hidden="true">
 											<Size x="285" y="0"/>
 										</FontString>
@@ -735,7 +735,7 @@
 							</AnimationGroup>
 						</Animations>
 						<Frames>
-							
+
 						</Frames>
 					</Frame>
 					<Frame parentKey="BackgroundFrame" setAllPoints="true" useParentLevel="true">
@@ -977,10 +977,16 @@
 									self:SetValue(modifiedValue);
 									if self.Text:GetNumRemaining() > 1 then
 										self:SetAlpha(1);
-									else 
+									else
 										self:SetAlpha(1 - (modifiedValue)^8);
 									end
-									if not value then
+									-- Issue/Fixed: Progress bar is not showing because OnUpdate() is called after Text:PreparePlayback() is called
+									-- which resulted in a nil value for Text:GetCurrentProgress(). Rather than checking value,
+									-- check if the text has remaining lines to display.
+									-- Removed:
+									-- if not value then
+									-- Added:
+								if self.Text:GetNumRemaining() == 1 then
 										self:Hide();
 									end
 									self.throttle = 0;
