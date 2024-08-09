@@ -89,10 +89,20 @@ function TalkBox:OnEnter()
 			L.UIFrameFadeIn(self.Hilite, 0.15, self.Hilite:GetAlpha(), 1)
 		end
 	end
+	-- Pause the automatic text progression.
+	local text = self.TextFrame.Text
+	if text:IsSequence() then
+		text:PauseTimer()
+	end
 end
 
 function TalkBox:OnLeave()
-	L.UIFrameFadeOut(self.Hilite, 0.15, self.Hilite:GetAlpha(), 0)
+  L.UIFrameFadeOut(self.Hilite, 0.15, self.Hilite:GetAlpha(), 0)
+	-- Resume the automatic text progression.
+	local text = self.TextFrame.Text
+	if text:IsSequence() then
+		text:ResumeTimer()
+	end
 end
 
 function TalkBox:OnDragStart()
@@ -114,7 +124,7 @@ function TalkBox:OnDragStop()
 		x = ( self:GetCenter() * ImmersionFrame:GetScale() ) - ( GetScreenWidth() / 2 )
 		y = self:GetBottom()
 	end
-	
+
 	local isBottom = point == 'Bottom'
 	if isBottom then
 		y = y - (self.extraY or 0)
