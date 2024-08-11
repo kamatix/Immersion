@@ -75,9 +75,31 @@ local function UpdateItemInfo(self, showMissing)
 		self:Show()
 		return true
 	elseif self.objectType == 'currency' then
-		local name, texture, amount, quality = GetQuestCurrencyInfo(self.type, self:GetID())
-		local currencyID = GetQuestCurrencyID(self.type, self:GetID())
-		name, texture, amount, quality = CurrencyContainerUtil.GetCurrencyContainerInfo(currencyID, amount, name, texture, quality)
+		-- Issue: GetQuestCurrencyInfo is nil for some quests.
+		-- 				Related to quests that are turn in only or have currency rewards.
+		-- Fix:		Check if GetQuestCurrencyInfo is nil and use C_TooltipInfo.GetQuestCurrency instead
+		--        The required amount to finish the quest is available in C_QuestLog.GetQuestObjectives(questID).
+		--			  Use C_QuestLog.GetQuestObjectives(questID) to get the objectives => numRequired
+		local name, texture, amount, quality
+
+		if GetQuestCurrencyInfo then
+			name, texture, amount, quality = GetQuestCurrencyInfo(self.type, self:GetID())
+		else
+			local currency = C_TooltipInfo.GetQuestCurrency(self.type, self:GetID())
+			local cInfo = C_CurrencyInfo.GetCurrencyInfo(currency.id)
+			local qObjectives = C_QuestLog.GetQuestObjectives(self.questID)
+			local currentObjective = qObjectives[self:GetID()]
+			name = cInfo.name
+			texture = cInfo.iconFileID
+			quality = cInfo.quality
+			amount = currentObjective.numRequired
+			-- DevTools_Dump(qObjectives)
+			-- DevTools_Dump(currency)
+			-- DevTools_Dump(cInfo)
+
+			-- local currencyID = GetQuestCurrencyID(self.type, self:GetID())
+			-- name, texture, amount, quality = CurrencyContainerUtil.GetCurrencyContainerInfo(currencyID, amount, name, texture, quality)
+		end
 		-- For the tooltip
 		self.Name:SetText(name)
 		self.itemTexture = texture
@@ -161,7 +183,7 @@ function Elements:SetMaterial(material)
 	if ( self.material ~= material ) then
 		self.material = material
 		local textColor, titleTextColor = GetMaterialTextColors(material)
-		local r, g, b 
+		local r, g, b
 		if not textColor or not titleTextColor then
 			textColor, titleTextColor = TEXT_COLOR, TITLE_COLOR
 		end
@@ -263,7 +285,7 @@ function Elements:ShowSeal()
 		local sealInfo = SEAL_QUESTS[GetQuestID()]
 		if sealInfo then
 			frame.Text:SetText(sealInfo.text)
-			frame.Texture:SetAtlas(sealInfo.sealAtlas, true) 
+			frame.Texture:SetAtlas(sealInfo.sealAtlas, true)
 			frame.Texture:SetPoint('TOPLEFT', ACTIVE_TEMPLATE.sealXOffset, ACTIVE_TEMPLATE.sealYOffset)
 			frame:Show()
 			return frame
@@ -285,7 +307,7 @@ function Elements:ShowRewards()
 			xp, artifactXP, artifactCategory, honor,
 			playerTitle,
 			numSpellRewards
-			
+
 	local numQuestSpellRewards = 0
 	local totalHeight = 0
 	local GetSpell = GetRewardSpell
@@ -319,11 +341,11 @@ function Elements:ShowRewards()
 	local totalRewards = numQuestRewards + numQuestChoices + numQuestCurrencies
 
 	do -- Check if any rewards are present, break out if none
-		if ( totalRewards == 0 and 
-			money == 0 and 
-			xp == 0 and 
-			not playerTitle and 
-			numQuestSpellRewards == 0 and 
+		if ( totalRewards == 0 and
+			money == 0 and
+			xp == 0 and
+			not playerTitle and
+			numQuestSpellRewards == 0 and
 			artifactXP == 0 ) then
 
 			return self:Hide()
@@ -338,7 +360,7 @@ function Elements:ShowRewards()
 		end
 	end
 
-	-- Setup locals 
+	-- Setup locals
 	local questItem, name, texture, quality, isUsable, numItems
 	local rewardsCount = 0
 	local lastFrame = self.Header
@@ -395,7 +417,7 @@ function Elements:ShowRewards()
 					local link = GetQuestItemLink(questItem.type, i)
 					vendorValue = link and select(11, GetItemInfo(link))
 				end
-				
+
 				if vendorValue and ( not highestValue or vendorValue > highestValue ) then
 					highestValue = vendorValue
 					if vendorValue > 0 and numQuestChoices > 1 then
@@ -459,7 +481,7 @@ function Elements:ShowRewards()
 									garrFollowerID 		and QUEST_SPELL_REWARD_TYPE_FOLLOWER or
 									isSpellLearned 		and QUEST_SPELL_REWARD_TYPE_SPELL or
 									genericUnlock 		and QUEST_SPELL_REWARD_TYPE_UNLOCK or QUEST_SPELL_REWARD_TYPE_AURA
-					
+
 					AddSpellToBucket(spellBuckets, bucket, rewardSpellIndex)
 				end
 			end
@@ -611,7 +633,7 @@ function Elements:ShowRewards()
 					rewardsCount = rewardsCount + 1
 				end
 			end
-			
+
 			do -- Currency
 				baseIndex = rewardsCount
 				local foundCurrencies = 0
@@ -650,7 +672,7 @@ function Elements:ShowRewards()
 				end
 			end
 
-			do -- Honor reward 
+			do -- Honor reward
 				self.HonorFrame:ClearAllPoints()
 				if ( honor > 0 ) then
 					local faction = UnitFactionGroup('player')
@@ -730,7 +752,7 @@ function Elements:ShowProgress(material)
 		-- If there's money required then anchor and display it
 		if ( numRequiredMoney > 0 ) then
 			MoneyFrame_Update(self.MoneyFrame, numRequiredMoney)
-			
+
 			local moneyColor, moneyVertex
 			if ( numRequiredMoney > GetMoney() ) then
 				moneyColor, moneyVertex = 'red', 0.2
@@ -753,7 +775,7 @@ function Elements:ShowProgress(material)
 			buttons[1]:SetPoint('TOPLEFT', self.ReqText, 'BOTTOMLEFT', -3, -5)
 		end
 
-		for i=1, numRequiredItems do	
+		for i=1, numRequiredItems do
 			local hidden = IsQuestItemHidden(i)
 			if ( hidden == 0 ) then
 				local requiredItem = GetItemButton(self, buttonIndex, 'ProgressItem')
@@ -776,8 +798,8 @@ function Elements:ShowProgress(material)
 				buttonIndex = buttonIndex + 1
 			end
 		end
-		
-		for i=1, numRequiredCurrencies do	
+
+		for i=1, numRequiredCurrencies do
 			local requiredItem = GetItemButton(self, buttonIndex, 'ProgressItem')
 			requiredItem.type = 'required'
 			requiredItem.objectType = 'currency'
