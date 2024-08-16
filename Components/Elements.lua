@@ -741,6 +741,7 @@ function Elements:ShowProgress(material)
 	self.Content:Hide()
 	self:SetMaterial(material)
 	local self = self.Progress
+	local questID = GetQuestID()
 	local numRequiredItems = API:GetNumQuestItems()
 	local numRequiredMoney = API:GetQuestMoneyToGet()
 	local numRequiredCurrencies = API:GetNumQuestCurrencies()
